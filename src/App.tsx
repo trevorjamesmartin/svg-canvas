@@ -4,13 +4,16 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import toSVG, { SVGi, toSVGLog, previewShape} from './util/toSVG';
 
 import './App.css';
-
+const defaultColors = {
+  fg: '#000000',
+  bg: '#11111100'
+}
 function App() {
   const svgElement: any = useRef();
   const [svglog, setLog] = useLocalStorage('svg', []);
   const [searchParams,] = useSearchParams();
-  const [color,] = useState<any>(searchParams.get('fg') || '#000000');
-  const [svgBackgroundColor,] = useState<any>(searchParams.get('bg') ? searchParams.get('bg') : 'transparent');
+  const [color, setColor] = useState<any>(searchParams.get('fg') || defaultColors.fg);
+  const [bgColor, setBackgroundColor] = useState<any>(searchParams.get('bg') ? searchParams.get('bg') : defaultColors.bg);
   const [humanInput, setHumanInput] = useState<SVGi>({ coord: { x: 0, y: 0 }, last: [], shape: 0 });
   const [popup, setPopup] = useState<any[]>([]);
   const [svgArea, setSvgArea] = useState<any>({ width: window.innerWidth, height: window.innerHeight });
@@ -19,7 +22,7 @@ function App() {
     window.onresize = () => {
       setSvgArea({ width: window.innerWidth, height: window.innerHeight });
     }
-  }, []);
+  }, [color, bgColor]);
 
   const triggerDownload = (imgURI: any) => {
     let a: HTMLAnchorElement = document.createElement('a');
@@ -54,7 +57,7 @@ function App() {
         }]
       });
     } else {
-      const item = toSVGLog(humanInput);
+      const item = toSVGLog(humanInput, color, bgColor);
       setLog([...svglog, item]);
       setHumanInput({ ...humanInput, last: [] });
     }
@@ -86,10 +89,20 @@ function App() {
         setLog(svglog.slice(0, -1));
         setPopup([]);
       }}>undo</li>
-      <li key="blank" onClick={() => {
+      <li key="blank1" onClick={() => {
         setHumanInput({ ...humanInput, last: [] });
         setPopup([]);
         }} className={humanInput.shape === 3 ? 'rc-menu-item-active' : 'rc-menu-item'}> ~ </li>
+      <li key="" className={'rc-menu-item-active' || 'rc-menu-item'}>
+        <input type="color" id="html5colorpicker1" value={color} onChange={(e:any) => setColor(e?.target?.value || '#00000000')}></input>
+        <input type="color" id="html5colorpicker2" value={bgColor} onChange={(e:any) => setBackgroundColor(e?.target?.value || '#00000000')}>
+      </input></li>
+      <li key="blank2" onClick={() => {
+        setHumanInput({ ...humanInput, last: [] });
+        setPopup([]);
+        setColor(defaultColors.fg)
+        setBackgroundColor(defaultColors.bg);
+        }} className={humanInput.shape === 3 ? 'rc-menu-item-active' : 'rc-menu-item'}>~ reset colors</li>
       <li key="save" onClick={() => {
         saveToFile();
         setPopup([]);
@@ -106,7 +119,7 @@ function App() {
       onContextMenu={handleContextMenu}
       style={{ width: svgArea.width, height: svgArea.height, position: "absolute", top: 0, left: 0, zIndex: -1 }}>
       Sorry, your browser does not support inline SVG.
-      {[...toSVG(svglog, color, svgBackgroundColor)]}
+      {[...toSVG(svglog)]}
       {[previewShape(humanInput)]}
     </svg>
     {[popup]}

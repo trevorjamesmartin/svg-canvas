@@ -9,14 +9,14 @@ export interface SVGi {
   shape: number | string
 }
 
-function toSVG(arr:string[], c?:any, b?:any) {
-  let color = c ? c : '#000000';
-  let svgBackgroundColor = b ? b : 'transparent';
+function toSVG(arr:string[]) {
   let svglog = arr;
   if (!svglog) return []
   return svglog.map((s:string, i:number) => {
     const [shape, ...arg0] = s.split(':');
     const args = arg0.join('');
+    const [fg, bg] = args.split(' ').slice(-2);
+    console.log()
     switch (shape) {
       case "circle":
         let [c, r] = args.split(' ');
@@ -25,9 +25,9 @@ function toSVG(arr:string[], c?:any, b?:any) {
           cx={cx}
           cy={cy}
           r={r}
-          stroke={color}
+          stroke={fg}
           strokeWidth="2"
-          fill={svgBackgroundColor}
+          fill={bg}
         />
       case "rectangle":
         let [tl, w, h] = args.split(' ');
@@ -37,9 +37,9 @@ function toSVG(arr:string[], c?:any, b?:any) {
           y={y}
           width={w}
           height={h}
-          stroke={color}
+          stroke={fg}
           strokeWidth="2"
-          fill={svgBackgroundColor}
+          fill={bg}
         />
       case "line":
         const [one, two] = args.split(' ');
@@ -51,10 +51,10 @@ function toSVG(arr:string[], c?:any, b?:any) {
           y1={oney}
           x2={twox}
           y2={twoy}
-          stroke={color}
+          stroke={fg}
         />
       default:
-        return null
+        return undefined
     }
   });
 }
@@ -66,7 +66,7 @@ export const translateCorners = (i:any) => {
   }
 }
 
-export const toSVGLog = (humanInput:any) => {
+export const toSVGLog = (humanInput:any, color?:string, svgBackgroundColor?:string) => {
   let svgstring;
   switch (humanInput.shape) {
     case 2:
@@ -87,7 +87,7 @@ export const toSVGLog = (humanInput:any) => {
     default:
       break;
   }
-  return svgstring;
+  return svgstring + ' ' + [color, svgBackgroundColor].join(' ');
 }
 
 export function previewShape(humanInput:any, options?:any) {
