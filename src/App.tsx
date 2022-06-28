@@ -20,7 +20,6 @@ function App() {
   const [svgBackgroundColor, setSVGBackgroundColor] = useState<any>(searchParams.get('bg') ? searchParams.get('bg') : 'transparent');
   const [humanInput, setHumanInput] = useState<SVGi>({ coord: { x: 0, y: 0 }, last: [], shape: 0 });
   const [popup, setPopup] = useState<any[]>([]);
-  const [mem, setMem] = useState<any[]>([]);
   const [svgArea, setSvgArea] = useState<any>({ width: window.innerWidth, height: window.innerHeight });
 
   useEffect(() => {
@@ -31,7 +30,7 @@ function App() {
 
   // download handlers
   const triggerDownload = (imgURI: any) => {
-    let a = document.createElement('a');
+    let a:HTMLAnchorElement = document.createElement('a');
     a.setAttribute('download', `image-${Date.now()}.svg`);
     a.setAttribute('href', imgURI);
     a.setAttribute('target', '_blank');
@@ -51,10 +50,15 @@ function App() {
       coord: { x: e.clientX, y: e.clientY }
     });
   }
+  const translate = () => {
+    return {
+      tl: [Math.min(humanInput.last[0].x, humanInput.coord.x), Math.min(humanInput.last[0].y, humanInput.coord.y)],
+      br: [Math.max(humanInput.last[0].x, humanInput.coord.x), Math.max(humanInput.last[0].y, humanInput.coord.y)]
+    }
+  }
 
   const handleClick = (e: any) => {
-    console.log(humanInput.coord)
-    console.log(svgElement.position)
+    
     if (popup) {
       setPopup([]);
     }
@@ -83,15 +87,13 @@ function App() {
           setHumanInput({ ...humanInput, last: [] });
           break;
         case 1:
-          // rectangle
-          const tl = humanInput.last[0]; // top left
-          const br = humanInput.coord; // bottom right
+          const { tl, br } = translate();
           setLog([...svglog,
           <rect
-            x={tl.x}
-            y={tl.y}
-            width={Math.abs(tl.x - br.x)}
-            height={Math.abs(tl.y - br.y)}
+            x={tl[0]}
+            y={tl[1]}
+            width={Math.abs(tl[0] - br[0])}
+            height={Math.abs(tl[1] - br[1])}
             stroke={color}
             strokeWidth="2"
             fill={svgBackgroundColor}
@@ -123,9 +125,7 @@ function App() {
     }
   }
 
-  // const [contextClass, setContextClass] = useState("rc-menu");
   const selectMenuItem = (value: string) => {
-    console.log(value);
     switch (value) {
       case "line":
         setHumanInput({ ...humanInput, shape: 0 });
@@ -157,23 +157,22 @@ function App() {
     }}
       className='rc-menu'
     >
-      <li className={humanInput.shape === 0 ? 'rc-menu-item-active' : 'rc-menu-item'} onClick={() => {
+      <li key="line" className={humanInput.shape === 0 ? 'rc-menu-item-active' : 'rc-menu-item'} onClick={() => {
         selectMenuItem('line');
       }}>line</li>
-      <li className={humanInput.shape === 1 ? 'rc-menu-item-active' : 'rc-menu-item'} onClick={() => {
+      <li key="rectangle" className={humanInput.shape === 1 ? 'rc-menu-item-active' : 'rc-menu-item'} onClick={() => {
         selectMenuItem('rectangle');
       }}>rectangle</li>
-      <li className={humanInput.shape === 2 ? 'rc-menu-item-active' : 'rc-menu-item'} onClick={() => {
+      <li key="circle" className={humanInput.shape === 2 ? 'rc-menu-item-active' : 'rc-menu-item'} onClick={() => {
         selectMenuItem('circle');
       }}>circle</li>
-      <li className={humanInput.shape === 3 ? 'rc-menu-item-active' : 'rc-menu-item'} onClick={() => {
+      <li key="undo" className={humanInput.shape === 3 ? 'rc-menu-item-active' : 'rc-menu-item'} onClick={() => {
         selectMenuItem('undo');
       }}>undo</li>
-      <li onClick={()=>selectMenuItem('blank')} className={humanInput.shape === 3 ? 'rc-menu-item-active' : 'rc-menu-item'}> ~ </li>
-      <li onClick={saveToFile} className={humanInput.shape === 3 ? 'rc-menu-item-active' : 'rc-menu-item'}>save</li>
+      <li key="blank" onClick={()=>selectMenuItem('blank')} className={humanInput.shape === 3 ? 'rc-menu-item-active' : 'rc-menu-item'}> ~ </li>
+      <li key="save" onClick={saveToFile} className={humanInput.shape === 3 ? 'rc-menu-item-active' : 'rc-menu-item'}>save</li>
 
     </ul>]);
-    console.log(x, y);
 
   }
 
@@ -197,28 +196,20 @@ function App() {
           y2={humanInput.coord.y || 0}
           stroke={humanInput.last.length ? "blue" : "transparent"} />
       ) : humanInput.shape === 1 && humanInput.last.length ? (
-          <rect
-            x={humanInput.last[0].x}
-            y={humanInput.last[0].y}
-            width={Math.abs(humanInput.last[0].x - humanInput.coord.x)}
-            height={Math.abs(humanInput.last[0].y - humanInput.coord.y)}
-            stroke={"blue"}
-            strokeWidth="2"
-            fill={svgBackgroundColor}
-          />) 
+        <polyline points={`${humanInput.last[0].x},${humanInput.last[0].y} ${humanInput.coord.x},${humanInput.last[0].y} ${humanInput.coord.x},${humanInput.coord.y} ${humanInput.last[0].x} ${humanInput.coord.y} ${humanInput.last[0].x},${humanInput.last[0].y}`} strokeWidth="2" fill="none" stroke="blue" />
+      )
         : humanInput.shape === 2 ? (
           (humanInput.last[0] || undefined) ?
             <circle
               cx={humanInput.last.length ? humanInput.last[0].x : 0}
               cy={humanInput.last.length ? humanInput.last[0].y : 0}
               r={(() => {
-                console.log(humanInput)
                 let z = humanInput.last[0] || undefined;
                 let a = humanInput.coord;
                 return Math.sqrt(((z.x - a.x) ** 2) + ((z.y - a.y) ** 2))
               })()} stroke={humanInput.last.length ? "blue" : "transparent"} strokeWidth="2" fill={svgBackgroundColor} />
             : <></>) : <></>
-          ]}
+      ]}
     </svg>
     {[popup]}
   </>
